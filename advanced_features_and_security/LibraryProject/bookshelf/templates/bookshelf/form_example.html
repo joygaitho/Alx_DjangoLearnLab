@@ -1,0 +1,23 @@
+{% extends "base.html" %} {% block content %}
+<h1>{{ title }}</h1>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+
+  <!-- Display any form-wide (non-field) errors -->
+  {{ form.non_field_errors }}
+
+  <!-- Loop through all form fields -->
+  {% for field in form %}
+  <div>
+    {{ field.label_tag }} {{ field }}
+    <!-- Show validation errors for each field -->
+    {% for error in field.errors %}
+    <p style="color: red">{{ error }}</p>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  <button type="submit">Save</button>
+</form>
+{% endblock %}
