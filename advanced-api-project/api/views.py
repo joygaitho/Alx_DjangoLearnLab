@@ -1,3 +1,26 @@
-from django.shortcuts import render
+from rest_framework import generics, filters
+from django_filters import rest_framework
+from django_filters.rest_framework import DjangoFilterBackend
+from .models import Book
+from .serializers import BookSerializer
 
-# Create your views here.
+class BookListView(generics.ListAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+
+    #  Enable filtering, searching, ordering
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+
+    # Filter by exact matches
+    filterset_fields = ["title", "author", "publication_year"]
+
+    # Search in these fields (case-insensitive)
+    search_fields = ["title", "author"]
+
+    # Allow ordering
+    ordering_fields = ["title", "publication_year"]
+    ordering = ["title"]  # default ordering
