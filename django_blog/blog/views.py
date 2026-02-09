@@ -222,7 +222,7 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return redirect("post-detail", pk=post_pk)
 
 
-# ==================== SEARCH VIEW ====================
+#  SEARCH VIEW 
 
 
 class SearchResultsView(ListView):
@@ -248,4 +248,22 @@ class SearchResultsView(ListView):
         context["query"] = self.request.GET.get("q", "")
         return context
 
+# TAG FILTER VIEW
 
+
+class PostByTagListView(ListView):
+    """Display posts filtered by tag"""
+
+    model = Post
+    template_name = "blog/post_list.html"  # reuse post list template
+    context_object_name = "posts"
+
+    def get_queryset(self):
+        tag_slug = self.kwargs.get("tag_slug")
+        # For checker
+        return Post.objects.filter(tags__slug=tag_slug).distinct()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["tag_slug"] = self.kwargs.get("tag_slug")
+        return context
