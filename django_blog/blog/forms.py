@@ -100,4 +100,4 @@ class CommentForm(forms.ModelForm):
                 raise forms.ValidationError(
                     "Comment cannot be empty or just whitespace."
                 )
-        return content
+        return content 
