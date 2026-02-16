@@ -59,3 +59,74 @@ class CommentViewSet(viewsets.ModelViewSet):
             )
 
 
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def feed_view(request):
+    """
+    Get posts from users that the current user follows
+    """
+    # Get users that the current user is following
+    following_users = request.user.following.all()
+
+    # Get posts from those users, ordered by most recent first
+    feed_posts = Post.objects.filter(author__in=following_users).order_by("-created_at")
+
+    # Paginate the results
+    paginator = StandardResultsPagination()
+    paginated_posts = paginator.paginate_queryset(feed_posts, request)
+
+    # Serialize the data
+    serializer = PostSerializer(paginated_posts, many=True)
+
+    return paginator.get_paginated_response(serializer.data)
+
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def like_post(request, pk):
+    """Like a post"""
+    post = generics.get_object_or_404(Post, pk=pk)
+
+    # Use get_or_create to handle liking
+    like, created = Like.objects.get_or_create(user=request.user, post=post)
+
+    if not created:
+        return Response(
+            {"error": "You have already liked this post"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Create notification for post author
+    from notifications.models import Notification
+
+    if post.author != request.user:
+        Notification.objects.create(
+            recipient=post.author,
+            actor=request.user,
+            verb="liked your post",
+            target=post,
+        )
+
+    return Response(
+        {"message": "Post liked successfully"}, status=status.HTTP_201_CREATED
+    )
+
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def unlike_post(request, pk):
+    """Unlike a post"""
+    post = generics.get_object_or_404(Post, pk=pk)
+
+    # Check if like exists
+    try:
+        like = Like.objects.get(user=request.user, post=post)
+        like.delete()
+        return Response(
+            {"message": "Post unliked successfully"}, status=status.HTTP_200_OK
+        )
+    except Like.DoesNotExist:
+        return Response(
+            {"error": "You have not liked this post"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
